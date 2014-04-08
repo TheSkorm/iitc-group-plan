@@ -30,6 +30,51 @@ function wrapper(plugin_info) {
     }
 
 
+
+
+    window.plugin.groupPlan.updateHidden = function(playername, status){
+console.log(status)
+    if (status == true){
+        window.plugin.groupPlan.useruuidmapping[playername] = ""
+if (window.plugin.groupPlan.hidden.indexOf(playername) > -1) {
+
+    window.plugin.groupPlan.hidden.splice(window.plugin.groupPlan.hidden.indexOf(playername), 1);
+}
+} else {
+    if (window.plugin.groupPlan.hidden.indexOf(playername) == -1) {
+
+window.plugin.groupPlan.hidden.push(playername)
+
+                for (var key in window.plugin.groupPlan.datalayer[playername]) {
+                    var item = window.plugin.groupPlan.datalayer[playername][key]
+                    window.plugin.groupPlan.layer.removeLayer(item)
+                    
+                    
+                }
+
+
+}
+
+}
+
+}
+
+    window.plugin.groupPlan.selectors = function(){
+        html = ""
+        for (var player in window.plugin.groupPlan.useruuidmapping) {
+            if (window.plugin.groupPlan.hidden.indexOf(player)){
+                checked = "checked"
+            } else {
+                checked = ""
+            }
+        html = html + "<input onchange=\"window.plugin.groupPlan.updateHidden(this.value, this.checked)\" type=\"checkbox\" name=\"selected\" value=\""+player+"\" "+checked+">"+player+"<br>"
+}
+         dialog({
+      html: html,
+      title: 'Group Plan Layers'
+    });
+    }
+
     window.plugin.groupPlan.setup = function() {
         window.plugin.groupPlan.context = PLAYER.nickname;
         window.plugin.groupPlan.url = "http://119.9.15.56:6529/";
@@ -37,11 +82,12 @@ function wrapper(plugin_info) {
         
         window.addLayerGroup('Group Plan', window.plugin.groupPlan.layer, true);
         $('#toolbox').append('<a onclick="window.plugin.groupPlan.settings();return false;">Group Plan Opts</a>');
+        $('#toolbox').append('<a onclick="window.plugin.groupPlan.selectors();return false;">Group Plan Layers</a>');
     }
     
     setup = window.plugin.groupPlan.setup;
     
-    
+    window.plugin.groupPlan.hidden = []
     window.plugin.groupPlan.useruuidmapping = {}
     
     window.plugin.groupPlan.syncPlan = function(data){
@@ -62,7 +108,7 @@ function wrapper(plugin_info) {
                     
                 }
                 window.plugin.groupPlan.datalayer[player]=[]
-                 if (player != PLAYER.nickname && player != window.plugin.groupPlan.context ){
+                 if (player != PLAYER.nickname && player != window.plugin.groupPlan.context && window.plugin.groupPlan.hidden.indexOf(player) == -1){
                     window.plugin.groupPlan.importdraw(player, data['draws'][player]);
                     
                 }
