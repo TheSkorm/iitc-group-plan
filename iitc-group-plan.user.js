@@ -21,11 +21,22 @@ function wrapper(plugin_info) {
     window.plugin.groupPlan = function() {};
     
     
+    window.plugin.groupPlan.settings = function() {
+         dialog({
+      html: "<b>Server URL :</b><input type=\"text\" name=\"ServerURL\" value=\""+window.plugin.groupPlan.url+"\"onchange=\"window.plugin.groupPlan.url=this.value\"></br><b>Server Username :</b><input type=\"text\" name=\"ServerUsername\" ></br><b>Server Password :</b><input type=\"text\" name=\"Password\"></br>",
+      title: 'Settings'
+    });
+
+    }
+
+
     window.plugin.groupPlan.setup = function() {
-        
+        window.plugin.groupPlan.context = PLAYER.nickname;
+        window.plugin.groupPlan.url = "http://119.9.15.56:6529/";
         window.plugin.groupPlan.layer = L.layerGroup([]);
         
         window.addLayerGroup('Group Plan', window.plugin.groupPlan.layer, true);
+        $('#toolbox').append('<a onclick="window.plugin.groupPlan.settings();return false;">Group Plan Opts</a>');
     }
     
     setup = window.plugin.groupPlan.setup;
@@ -51,7 +62,7 @@ function wrapper(plugin_info) {
                     
                 }
                 window.plugin.groupPlan.datalayer[player]=[]
-                 if (player != PLAYER.nickname){
+                 if (player != PLAYER.nickname && player != window.plugin.groupPlan.context ){
                     window.plugin.groupPlan.importdraw(player, data['draws'][player]);
                     
                 }
@@ -132,7 +143,7 @@ function wrapper(plugin_info) {
     
     window.plugin.groupPlan.updatereq = function (){
         $.ajax({
-            url: "http://119.9.15.56:6529/",
+            url: window.plugin.groupPlan.url,
             
             jsonp: "callback",
             
@@ -141,7 +152,7 @@ function wrapper(plugin_info) {
             data: 
             {o: localStorage['plugin-draw-tools-layer'],
              y: window.plugin.groupPlan.guid(),
-             agentname: PLAYER.nickname},
+             agentname: window.plugin.groupPlan.context},
             
             // work with the response
             success: function( response ) {
