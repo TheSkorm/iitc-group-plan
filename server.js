@@ -13,10 +13,10 @@ http.createServer(function (req, res) {
       db['draws'][query['agentname']] =  JSON.parse(query['o'])
   }
       res.writeHead(200, {'Content-Type': 'text/javascript'});
-      res.end("syncPlan("+JSON.stringify(db) +")");
+      res.end("window.plugin.groupPlan.syncPlan("+JSON.stringify(db) +")");
       //console.log("[404] " + req.method + " to " + req.url);
   };
-}).listen(8080); // listen on tcp port 8080 (all interfaces)
+}).listen(6529); // listen on tcp port 8080 (all interfaces)
 
 process.on('uncaughtException', function(e){
     console.log(e);
