@@ -163,7 +163,7 @@ html = html + "</table>"
                     
                 }
                 window.plugin.groupPlan.datalayer[player]=[]
-                 if (player != PLAYER.nickname && player != window.plugin.groupPlan.context && window.plugin.groupPlan.hidden.indexOf(player) == -1){
+                 if (player != window.plugin.groupPlan.context && window.plugin.groupPlan.hidden.indexOf(player) == -1){
                     window.plugin.groupPlan.importdraw(player, data['draws'][player]);
                     
                 }
