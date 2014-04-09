@@ -2,7 +2,7 @@
 // @id             iitc-plugin-group-plan
 // @name           IITC plugin: Group Plan
 // @category       Layer
-// @version        0.0.1
+// @version        0.0.4
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @updateURL      
 // @downloadURL    
@@ -22,8 +22,14 @@ function wrapper(plugin_info) {
     
     
     window.plugin.groupPlan.settings = function() {
+         html = "<b>Server URL :</b><input type=\"text\" name=\"ServerURL\" value=\""
+         html = html + window.plugin.groupPlan.url+"\"onchange=\"window.plugin.groupPlan.url=this.value\"></br>"
+         html = html + "<b>Drawing Layer :</b><input type=\"text\" name=\"context\" onchange=\"window.plugin.groupPlan.context=this.value\" value=\"" + window.plugin.groupPlan.context + "\"></br>"
+         html = html + "<b>Server Username :</b><input type=\"text\" name=\"ServerUsername\" onchange=\"window.plugin.groupPlan.username=this.value\" ></br>"
+         html = html + "<b>Server Password :</b><input type=\"text\" onchange=\"window.plugin.groupPlan.password=this.value\" name=\"Password\"></br>"
          dialog({
-      html: "<b>Server URL :</b><input type=\"text\" name=\"ServerURL\" value=\""+window.plugin.groupPlan.url+"\"onchange=\"window.plugin.groupPlan.url=this.value\"></br><b>Server Username :</b><input type=\"text\" name=\"ServerUsername\" ></br><b>Server Password :</b><input type=\"text\" name=\"Password\"></br>",
+
+      html: html,
       title: 'Settings'
     });
 
@@ -59,16 +65,64 @@ window.plugin.groupPlan.hidden.push(playername)
 
 }
 
+window.plugin.groupPlan.configsave = function(){
+    localStorage['plugin-group-plan-url'] = window.plugin.groupPlan.url
+localStorage['plugin-group-plan-username'] = window.plugin.groupPlan.username 
+localStorage['plugin-group-plan-password'] = window.plugin.groupPlan.password
+localStorage['plugin-group-plan-context'] = window.plugin.groupPlan.context
+}
+
+window.plugin.groupPlan.configload = function() {
+  try {
+    var dataStr = localStorage['plugin-group-plan-url'];
+    if (dataStr != undefined) 
+    {
+
+        window.plugin.groupPlan.url = dataStr;
+    }
+    var dataStr = localStorage['plugin-group-plan-username'];
+    if (dataStr != undefined) 
+    {
+
+        window.plugin.groupPlan.username = dataStr;
+    }
+    var dataStr = localStorage['plugin-group-plan-password'];
+    if (dataStr != undefined) 
+    {
+
+        window.plugin.groupPlan.password= dataStr;
+    }
+    
+    var dataStr = localStorage['plugin-group-plan-context'];
+    if (dataStr != undefined) 
+    {
+
+        window.plugin.groupPlan.context = dataStr;
+    }
+
+  } catch(e) {
+    console.warn('group-plan: failed to load data from localStorage: '+e);
+  }
+}
+
+
+
+window.plugin.groupPlan.load = function(player){
+    window.plugin.drawTools.import(window.plugin.groupPlan.cache['draws'][player]);
+}
+
     window.plugin.groupPlan.selectors = function(){
-        html = ""
+        html = "<table>"
         for (var player in window.plugin.groupPlan.useruuidmapping) {
             if (window.plugin.groupPlan.hidden.indexOf(player)){
                 checked = "checked"
             } else {
                 checked = ""
             }
-        html = html + "<input onchange=\"window.plugin.groupPlan.updateHidden(this.value, this.checked)\" type=\"checkbox\" name=\"selected\" value=\""+player+"\" "+checked+">"+player+"<br>"
+        html = html + "<tr><td style=\"background-color: "+window.plugin.groupPlan.stringToColour(player)+"; width: 20px\"><input style=\"background-color: "+window.plugin.groupPlan.stringToColour(player)+"; width: 20px\" onchange=\"window.plugin.groupPlan.updateHidden(this.value, this.checked)\" type=\"checkbox\" name=\"selected\" value=\""+player+"\" "+checked+"></td><td style=\"vertical-align: middle\">"+player+"</td><td> - <a href=\"javascript:window.plugin.groupPlan.load(\'"+player+"\')\"> Load</a></td></tr>"
+
 }
+html = html + "</table>"
          dialog({
       html: html,
       title: 'Group Plan Layers'
@@ -78,8 +132,8 @@ window.plugin.groupPlan.hidden.push(playername)
     window.plugin.groupPlan.setup = function() {
         window.plugin.groupPlan.context = PLAYER.nickname;
         window.plugin.groupPlan.url = "http://119.9.15.56:6529/";
-        window.plugin.groupPlan.layer = L.layerGroup([]);
-        
+       window.plugin.groupPlan.layer = new L.FeatureGroup()
+        window.plugin.groupPlan.configload();
         window.addLayerGroup('Group Plan', window.plugin.groupPlan.layer, true);
         $('#toolbox').append('<a onclick="window.plugin.groupPlan.settings();return false;">Group Plan Opts</a>');
         $('#toolbox').append('<a onclick="window.plugin.groupPlan.selectors();return false;">Group Plan Layers</a>');
@@ -89,9 +143,10 @@ window.plugin.groupPlan.hidden.push(playername)
     
     window.plugin.groupPlan.hidden = []
     window.plugin.groupPlan.useruuidmapping = {}
-    
+    window.plugin.groupPlan.cache = {}
+
     window.plugin.groupPlan.syncPlan = function(data){
-        console.log(data)
+        window.plugin.groupPlan.cache = data
         for (var player in data['users']) {
             var uuid = data['users'][player];
             if (window.plugin.groupPlan.useruuidmapping[player] != uuid) {
@@ -145,7 +200,8 @@ window.plugin.groupPlan.hidden.push(playername)
             s4() + '-' + s4() + s4() + s4();
     }
     
-    
+            window.plugin.groupPlan.username = ""
+             window.plugin.groupPlan.password  = ""
     
     window.plugin.groupPlan.datalayer = {}
     
@@ -180,6 +236,7 @@ window.plugin.groupPlan.hidden.push(playername)
             if (layer) {
                 window.plugin.groupPlan.datalayer[player].push(layer);
                 window.plugin.groupPlan.layer.addLayer(layer)
+                window.plugin.groupPlan.layer.bringToBack()
                 
             }
         });
@@ -188,13 +245,16 @@ window.plugin.groupPlan.hidden.push(playername)
     }
     
     window.plugin.groupPlan.updatereq = function (){
+        window.plugin.groupPlan.configsave();
+        if (window.plugin.groupPlan.url != ""){
         $.ajax({
             url: window.plugin.groupPlan.url,
             
             jsonp: "callback",
             
             dataType: "jsonp",
-            
+            username: window.plugin.groupPlan.username,
+            password: window.plugin.groupPlan.password,
             data: 
             {o: localStorage['plugin-draw-tools-layer'],
              y: window.plugin.groupPlan.guid(),
@@ -205,6 +265,7 @@ window.plugin.groupPlan.hidden.push(playername)
                 console.log( response ); // server response
             }
         });
+    }
     }
     
     window.setInterval(window.plugin.groupPlan.updatereq,2000);
